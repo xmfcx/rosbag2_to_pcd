@@ -1,0 +1,4 @@
+/**:
+  ros__parameters:
+    path_bag: /home/mfc/bags/rosbag2_2023_08_15-18_35_14
+    topic_cloud: /hesai/pandar

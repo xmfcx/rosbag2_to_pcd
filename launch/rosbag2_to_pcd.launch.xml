@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="rosbag2_to_pcd" exec="rosbag2_to_pcd_node" name="rosbag2_to_pcd" output="screen">
+    <param from="$(find-pkg-share rosbag2_to_pcd)/config/rosbag2_to_pcd.param.yaml"/>
+  </node>
+</launch>

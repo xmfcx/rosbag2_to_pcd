@@ -1,0 +1,11 @@
+# colcon
+build/
+install/
+log/
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Jetbrains project files
+.idea/
