@@ -4,6 +4,9 @@ The `rosbag2_to_pcd` package provides functionality to convert point cloud data 
 Cloud Data) files.
 For each point cloud message in the specified topic, the package creates an individual PCD file.
 
+**Alternative (much more capable) tool:**
+- https://github.com/AIT-Assistive-Autonomous-Systems/ros2bag_tools#export
+
 ## Installation
 
 To install, follow the [ROS 2 Humble Installation Guide](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html) and then execute:
