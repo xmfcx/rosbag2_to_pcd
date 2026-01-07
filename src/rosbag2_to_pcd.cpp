@@ -32,6 +32,32 @@
 
 #include <sensor_msgs/msg/point_cloud2.hpp>
 
+namespace {
+
+std::string getTimestampString(
+  const sensor_msgs::msg::PointCloud2 & msg_cloud,
+  const int max_sec)
+{
+  std::stringstream ss_timestamp;
+
+  // Seconds, zero-padded to width of max_sec
+  if (0 <= max_sec && msg_cloud.header.stamp.sec < max_sec) {
+    const int sec_width = std::to_string(max_sec).length();
+    ss_timestamp << std::setw(sec_width) << std::setfill('0');
+  }
+  ss_timestamp << msg_cloud.header.stamp.sec;
+
+  // Separator
+  ss_timestamp << "-";
+
+  // Nanoseconds, always zero-padded to 9 digits
+  ss_timestamp << std::setw(9) << std::setfill('0') << msg_cloud.header.stamp.nanosec;
+
+  return ss_timestamp.str();
+}
+
+}  // Anonymous namespace
+
 namespace rosbag2_to_pcd
 {
 Rosbag2ToPcdNode::Rosbag2ToPcdNode(const rclcpp::NodeOptions & node_options)
@@ -54,6 +80,25 @@ Rosbag2ToPcdNode::Rosbag2ToPcdNode(const rclcpp::NodeOptions & node_options)
     return;
   }
 
+  // First pass to find max seconds for timestamp formatting.
+  int max_sec = 0;
+  while (reader.has_next()) {
+    auto bag_message = reader.read_next();
+    using rosbag2_cpp::converter_interfaces::SerializationFormatConverter;
+    auto msg_cloud = std::make_shared<sensor_msgs::msg::PointCloud2>();
+
+    rclcpp::SerializedMessage extracted_serialized_msg(*bag_message->serialized_data);
+    rclcpp::Serialization<sensor_msgs::msg::PointCloud2> serialization;
+    serialization.deserialize_message(&extracted_serialized_msg, &(*msg_cloud));
+
+    if (msg_cloud->header.stamp.sec > max_sec) {
+      max_sec = msg_cloud->header.stamp.sec;
+    }
+  }
+
+  reader.seek(0);
+
+  // Second pass to convert and save point clouds.
   const auto & topics = reader.get_metadata().topics_with_message_count;
   const auto iter_topic =
     std::find_if(topics.begin(), topics.end(), [&topic_cloud](const auto & topic) {
@@ -81,9 +126,7 @@ Rosbag2ToPcdNode::Rosbag2ToPcdNode(const rclcpp::NodeOptions & node_options)
       pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
       pcl::fromROSMsg(*msg_cloud, *cloud);
 
-      std::stringstream ss_timestamp;
-      ss_timestamp << msg_cloud->header.stamp.sec << "-" << msg_cloud->header.stamp.nanosec;
-      std::string timestamp = ss_timestamp.str();
+      const std::string timestamp = getTimestampString(*msg_cloud, max_sec);
 
       RCLCPP_INFO_STREAM(
         get_logger(),
